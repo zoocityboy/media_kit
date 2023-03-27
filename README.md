@@ -31,7 +31,12 @@ A complete video & audio library for Flutter & Dart.
 
 <hr>
 
-https://user-images.githubusercontent.com/28951144/209100988-6f85f563-20e0-4e35-893a-ae099c7e03e4.mp4
+
+https://user-images.githubusercontent.com/28951144/223529386-c4039cf1-3ead-49c2-bcc7-5c5f8541958a.mp4
+
+<br></br>
+
+Performance on entry-level AMD Ryzen 3 2200U processor with integrated Radeon Vega 3 Mobile Graphics.
 
 ## Installation
 
@@ -42,11 +47,13 @@ dependencies:
   media_kit: ^0.0.1
   # For video rendering.
   media_kit_video: ^0.0.1
-  # For enabling support for more than 8 simultaneous players (only Flutter).
+  # For enabling support for more than 8 simultaneous players.
   media_kit_native_event_loop: ^1.0.0
   # Pick based on your requirements / platform:
   media_kit_libs_windows_video: ^1.0.0          # Windows package for video (& audio) native libraries.
   media_kit_libs_windows_audio: ^1.0.0          # Windows package for audio (only) native libraries.
+  media_kit_libs_ios_video: ^1.0.0              # iOS package for video (& audio) native libraries.
+  media_kit_libs_macos_video: ^1.0.0            # macOS package for video (& audio) native libraries.
   media_kit_libs_linux: ^1.0.0                  # Linux dependency package.
 ```
 
@@ -56,29 +63,42 @@ dependencies:
 | -------- | ----- | ----- |
 | Windows  | Ready | Ready |
 | Linux    | Ready | Ready |
-| macOS    | WIP   | WIP   |
+| macOS    | Ready | Ready |
+| iOS      | Ready | Ready |
 | Android  | Soon  | Soon  |
-| iOS      | Soon  | Soon  |
 
 ## Guide
 
 ### Brief Start
 
-Basic example.
-
 ```dart
 import 'package:media_kit/media_kit.dart';
 
-/// Create a new [Player] instance.
 final player = Player();
 
 ...
-/// Open some [Media] for playback.
+
+player.streams.playlist.listen((e) => print(e));
+player.streams.playing.listen((e) => print(e));
+player.streams.completed.listen((e) => print(e));
+player.streams.position.listen((e) => print(e));
+player.streams.duration.listen((e) => print(e));
+player.streams.volume.listen((e) => print(e));
+player.streams.rate.listen((e) => print(e));
+player.streams.pitch.listen((e) => print(e));
+player.streams.buffering.listen((e) => print(e));
+player.streams.audioParams.listen((e) => print(e));
+player.streams.audioBitrate.listen((e) => print(e));
+player.streams.audioDevice.listen((e) => print(e));
+player.streams.audioDevices.listen((e) => print(e));
+
+...
+
 await player.open(
   Playlist(
     [
-      Media('file:///C:/Users/Hitesh/Music/Sample.MP3'),
-      Media('file:///C:/Users/Hitesh/Video/Sample.MKV'),
+      Media('file:///C:/Users/Hitesh/Music/Sample.mp3'),
+      Media('file:///C:/Users/Hitesh/Video/Sample.mkv'),
       Media('https://www.example.com/sample.mp4'),
       Media('rtsp://www.example.com/live'),
     ],
@@ -86,46 +106,33 @@ await player.open(
 );
 
 ...
-/// Modify speed, pitch, volume or shuffle state.
-player.rate = 1.0;
-player.pitch = 1.2;
-player.volume = 50.0;
-player.shuffle = false;
+
+await player.play();
+await player.pause();
+await player.playOrPause();
+await player.seek(const Duration(seconds: 10));
 
 ...
-/// Play / Pause
-player.play();
-player.pause();
-player.playOrPause();
+
+await player.next();
+await player.previous();
+await player.jump(2);
+await player.add(Media('https://www.example.com/sample.mp4'));
+await player.move(0, 2);
 
 ...
-/// Release allocated resources back to the system.
-player.dispose();
+
+await player.setRate(1.0);
+await player.setPitch(1.2);
+await player.setVolume(50.0);
+await player.setShuffle(false);
+await player.setPlaylistMode(PlaylistMode.loop);
+await player.setAudioDevice(AudioDevice.auto());
 
 ...
-/// Subscribe to events.
-player.streams.playlist.listen((event) {
-  /// Trigger UI updates etc.
-  print(event);
-});
-player.streams.playlist.listen((event) {
-  /// Trigger UI updates etc.
-  print(event);
-});
-player.streams.position.listen((event) {
-  /// Trigger UI updates etc.
-  print(event);
-});
-player.streams.duration.listen((event) {
-  /// Trigger UI updates etc.
-  print(event);
-});
-player.streams.audioBitrate.listen((event) {
-  /// Trigger UI updates etc.
-  if (event != null) {
-    print('${event ~/ 1000} KB/s');
-  }
-});
+
+await player.dispose();
+
 ```
 
 ### Rendering Video
@@ -633,6 +640,14 @@ classDiagram
   }
 ```
 
+#### macOS
+
+_TODO: documentation_
+
+#### iOS
+
+_TODO: documentation_
+
 ## Implementation
 
 [libmpv](https://github.com/mpv-player/mpv/tree/master/libmpv) is used for leveraging audio & video playback.
@@ -677,16 +692,13 @@ You can visit my [experimentation repository](https://github.com/alexmercerind/f
 
 On Flutter Linux, [both OpenGL (H/W) & pixel buffer (S/W) APIs](https://github.com/flutter/engine/pull/24916) are available for rendering on Texture widget.
 
-## Outcomes
+#### macOS
 
-4K video playback on entry-level AMD Ryzen 3 2200U processor with Radeon Vega 3 Mobile Graphics.
+_TODO: documentation_
 
-**NOTES:**
+#### iOS
 
-- See process specific CPU & GPU usage (media_kit_test.exe). Overall CPU usage is high due to screen recording.
-- Memory usage is higher because of higher resolution 4K video. General usage will be lower.
-
-https://user-images.githubusercontent.com/28951144/208765832-416313c9-97d4-44d0-a902-e577f3c4f3f6.mp4
+_TODO: documentation_
 
 ## License
 

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 
@@ -46,15 +47,6 @@ class HomeScreen extends StatelessWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.only(
-              left: 16.0,
-              top: 16.0,
-              bottom: 16.0,
-            ),
-            child: Text('Situations:'),
-          ),
-          const Divider(height: 1.0, thickness: 1.0),
           ListTile(
             title: const Text(
               'Single [Player] with single [Video] • File & Asset',
@@ -165,13 +157,18 @@ class SimpleScreen extends StatefulWidget {
 
 class _SimpleScreenState extends State<SimpleScreen> {
   // Create a [Player] instance from `package:media_kit`.
-  final Player player = Player();
+  final Player player = Player(
+    configuration: const PlayerConfiguration(
+      logLevel: MPVLogLevel.warn,
+    ),
+  );
   // Reference to the [VideoController] instance.
   VideoController? controller;
 
   @override
   void initState() {
     super.initState();
+    pipeLogsToConsole(player);
     Future.microtask(() async {
       // Create a [VideoController] instance from `package:media_kit_video`.
       // Pass the [handle] of the [Player] from `package:media_kit` to the [VideoController] constructor.
@@ -237,6 +234,7 @@ class _SimpleScreenState extends State<SimpleScreen> {
               ),
             ),
           ),
+          TracksSelector(player: player),
           SeekBar(player: player),
           const SizedBox(height: 32.0),
         ],
@@ -316,7 +314,11 @@ class SimpleStream extends StatefulWidget {
 
 class _SimpleStreamState extends State<SimpleStream> {
   // Create a [Player] instance from `package:media_kit`.
-  final Player player = Player();
+  final Player player = Player(
+    configuration: const PlayerConfiguration(
+      logLevel: MPVLogLevel.warn,
+    ),
+  );
   // Reference to the [VideoController] instance.
   VideoController? controller;
   final _formKey = GlobalKey<FormState>();
@@ -326,6 +328,7 @@ class _SimpleStreamState extends State<SimpleStream> {
   @override
   void initState() {
     super.initState();
+    pipeLogsToConsole(player);
     Future.microtask(() async {
       // Create a [VideoController] instance from `package:media_kit_video`.
       // Pass the [handle] of the [Player] from `package:media_kit` to the [VideoController] constructor.
@@ -360,6 +363,7 @@ class _SimpleStreamState extends State<SimpleStream> {
               ),
             ),
           ),
+          TracksSelector(player: player),
           SeekBar(player: player),
           const SizedBox(height: 32.0),
         ],
@@ -606,6 +610,7 @@ class _SinglePlayerMultipleVideosScreenState
               ],
             ),
           ),
+          TracksSelector(player: player),
           SeekBar(player: player),
           const SizedBox(height: 32.0),
         ],
@@ -818,6 +823,138 @@ class _MultiplePlayersMultipleVideosScreenState
   }
 }
 
+class TracksSelector extends StatefulWidget {
+  final Player player;
+
+  const TracksSelector({
+    Key? key,
+    required this.player,
+  }) : super(key: key);
+
+  @override
+  State<TracksSelector> createState() => _TracksSelectorState();
+}
+
+class _TracksSelectorState extends State<TracksSelector> {
+  final List<StreamSubscription> _subscriptions = [];
+  Track track = const Track();
+  Tracks tracks = const Tracks();
+
+  @override
+  void initState() {
+    super.initState();
+    _subscriptions.addAll(
+      [
+        widget.player.streams.track.listen((event) {
+          setState(() {
+            track = event;
+          });
+        }),
+        widget.player.streams.tracks.listen((event) {
+          setState(() {
+            tracks = event;
+          });
+        }),
+      ],
+    );
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    for (final s in _subscriptions) {
+      s.cancel();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        DropdownButton<VideoTrack>(
+          icon: const Padding(
+            padding: EdgeInsets.only(left: 8.0),
+            child: Icon(Icons.videocam_outlined),
+          ),
+          value: track.video,
+          items: tracks.video
+              .map(
+                (e) => DropdownMenuItem(
+                  value: e,
+                  child: Text(
+                    '${e.id} • ${e.title} • ${e.language}',
+                    style: const TextStyle(
+                      fontSize: 14.0,
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
+          onChanged: (track) {
+            if (track != null) {
+              widget.player.setVideoTrack(track);
+            }
+          },
+        ),
+        const SizedBox(width: 16.0),
+        DropdownButton<AudioTrack>(
+          icon: const Padding(
+            padding: EdgeInsets.only(left: 8.0),
+            child: Icon(Icons.audiotrack_outlined),
+          ),
+          value: track.audio,
+          items: tracks.audio
+              .map(
+                (e) => DropdownMenuItem(
+                  value: e,
+                  child: Text(
+                    '${e.id} • ${e.title} • ${e.language}',
+                    style: const TextStyle(
+                      fontSize: 14.0,
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
+          onChanged: (track) {
+            if (track != null) {
+              widget.player.setAudioTrack(track);
+            }
+          },
+        ),
+        const SizedBox(width: 16.0),
+        DropdownButton<SubtitleTrack>(
+          icon: const Padding(
+            padding: EdgeInsets.only(left: 8.0),
+            child: Icon(Icons.subtitles_outlined),
+          ),
+          value: track.subtitle,
+          items: tracks.subtitle
+              .map(
+                (e) => DropdownMenuItem(
+                  value: e,
+                  child: Text(
+                    '${e.id} • ${e.title} • ${e.language}',
+                    style: const TextStyle(
+                      fontSize: 14.0,
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
+          onChanged: (track) {
+            if (track != null) {
+              widget.player.setSubtitleTrack(track);
+            }
+          },
+        ),
+        const SizedBox(width: 48.0),
+      ],
+    );
+  }
+}
+
 class SeekBar extends StatefulWidget {
   final Player player;
   const SeekBar({
@@ -830,7 +967,7 @@ class SeekBar extends StatefulWidget {
 }
 
 class _SeekBarState extends State<SeekBar> {
-  bool isPlaying = false;
+  bool playing = false;
   Duration position = Duration.zero;
   Duration duration = Duration.zero;
 
@@ -839,14 +976,14 @@ class _SeekBarState extends State<SeekBar> {
   @override
   void initState() {
     super.initState();
-    isPlaying = widget.player.state.isPlaying;
+    playing = widget.player.state.playing;
     position = widget.player.state.position;
     duration = widget.player.state.duration;
     subscriptions.addAll(
       [
-        widget.player.streams.isPlaying.listen((event) {
+        widget.player.streams.playing.listen((event) {
           setState(() {
-            isPlaying = event;
+            playing = event;
           });
         }),
         widget.player.streams.position.listen((event) {
@@ -880,7 +1017,7 @@ class _SeekBarState extends State<SeekBar> {
         IconButton(
           onPressed: widget.player.playOrPause,
           icon: Icon(
-            isPlaying ? Icons.pause : Icons.play_arrow,
+            playing ? Icons.pause : Icons.play_arrow,
           ),
           color: Theme.of(context).primaryColor,
           iconSize: 36.0,
@@ -945,7 +1082,7 @@ class _StressTestScreenState extends State<StressTestScreen> {
             play: true,
           );
           await players[i].setPlaylistMode(PlaylistMode.loop);
-          players[i].volume = 0.0;
+          await players[i].setVolume(0.0);
         }
         setState(() {});
       },
@@ -1073,7 +1210,6 @@ class _TabScreenState extends State<TabScreen> {
       controller = await VideoController.create(
         player.handle,
       );
-      player.volume = 0.0;
       await player.open(
         Playlist(
           [
@@ -1082,6 +1218,7 @@ class _TabScreenState extends State<TabScreen> {
         ),
       );
       await player.setPlaylistMode(PlaylistMode.loop);
+      await player.setVolume(0.0);
       setState(() {});
     });
   }
@@ -1108,3 +1245,11 @@ String? _fontFamily = {
   'android': 'Roboto',
   'ios': 'SF Pro Text',
 }[Platform.operatingSystem];
+
+void pipeLogsToConsole(Player player) {
+  player.streams.log.listen((event) {
+    if (kDebugMode) {
+      print("mpv: ${event.prefix}: ${event.level}: ${event.text}");
+    }
+  });
+}

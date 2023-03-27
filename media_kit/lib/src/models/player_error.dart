@@ -12,8 +12,11 @@ class PlayerError {
   /// Error message.
   final String message;
 
-  PlayerError(
+  const PlayerError(
     this.code,
     this.message,
   );
+
+  @override
+  String toString() => 'PlayerError(code: $code, message: $message)';
 }
